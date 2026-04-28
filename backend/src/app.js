@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/auth.routes");
 const courseRoutes = require("./routes/course.routes");
 const enrollmentRoutes = require("./routes/enrollment.routes");
+const cloudinaryRoutes = require('../src/routes/cloudinary.routes')
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+app.use('/api/cloudinary',cloudinaryRoutes);
 
 
 module.exports = app;
