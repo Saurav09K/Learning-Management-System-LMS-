@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from '../src/pages/Login';
 import Register from '../src/pages/Register';
+import InstructorDashboard from '../src/pages/InstructorDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -11,7 +13,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/instructor/dashboard" element={<h1>Instructor Dashboard</h1>} />
+          <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorDashboard /></ProtectedRoute>} />
           <Route path="/instructor/create-course" element={<h1>Create Course Builder</h1>} />
 
           <Route path="/student/my-learning" element={<h1>Student Dashboard</h1>} />

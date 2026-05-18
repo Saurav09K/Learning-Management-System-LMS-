@@ -99,10 +99,28 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+
+// @desc    Get courses for the logged-in instructor
+// @route   GET /api/courses/me
+const getInstructorCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ instructor: req.user.id })
+      .select('-modules') 
+      .populate('instructor', 'name');
+
+    res.status(200).json({ success: true, count: courses.length, courses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+
+
 module.exports = {
   createCourse,
   getCourses,
   getCourseById,
   updateCourse,
-  deleteCourse
+  deleteCourse,
+  getInstructorCourses
 };

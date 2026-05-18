@@ -6,7 +6,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student'); // Default to student
+  const [role, setRole] = useState('student'); 
   const [error, setError] = useState('');
   
   const { register } = useAuth(); 
