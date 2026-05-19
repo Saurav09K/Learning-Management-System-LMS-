@@ -7,10 +7,14 @@ const {
   getCourseById,
   updateCourse,
   deleteCourse,
-  getInstructorCourses
+  getInstructorCourses,
+  addLesson,  
+  addModule
 } = require('../controllers/courseController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
+
+router.get('/me', protect, authorize('instructor'), getInstructorCourses);
 
 // Public routes
 router.get('/', getCourses);
@@ -20,6 +24,7 @@ router.get('/:id', getCourseById);
 router.post('/', protect, authorize('instructor'), createCourse);
 router.put('/:id', protect, authorize('instructor'), updateCourse);
 router.delete('/:id', protect, authorize('instructor'), deleteCourse);
-router.get('/me', protect, authorize('instructor'), getInstructorCourses);
+router.post('/:courseId/modules/:moduleId/lessons',protect,authorize('instructor'),  addLesson);
+router.post('/:courseId/modules', protect, authorize('instructor'), addModule);
 
 module.exports = router;

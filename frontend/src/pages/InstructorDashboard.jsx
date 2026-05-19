@@ -9,11 +9,12 @@ const InstructorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-    useEffect(() => {
-        const fetchMyCourses = async () => {
-        try {
+useEffect(() => {
+    const fetchMyCourses = async () => {
+      try {
         const { data } = await api.get('/courses/me');
-        setCourses(data); 
+        setCourses(data.courses);
+
       } catch (err) {
         setError('Failed to load your courses. Please try again later.');
       } finally {
@@ -94,9 +95,12 @@ const InstructorDashboard = () => {
                   
                   <div className="flex justify-between items-center mt-auto border-t pt-4 border-gray-100">
                     <span className="font-bold text-gray-900">${course.price}</span>
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                      Edit Course
-                    </button>
+                    <Link 
+                      to={`/instructor/course/${course._id}/curriculum`} 
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                     Manage Content
+                    </Link>
                   </div>
                 </div>
               </div>
