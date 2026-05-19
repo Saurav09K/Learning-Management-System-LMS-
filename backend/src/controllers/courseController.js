@@ -108,11 +108,82 @@ const getInstructorCourses = async (req, res) => {
       .select('-modules') 
       .populate('instructor', 'name');
 
-    res.status(200).json({ success: true, count: courses.length, courses });
+    res.status(200).json({ success: true, courses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
+
+// @desc    Add a video lesson to a specific module
+// @route   POST /api/courses/:courseId/modules/:moduleId/lessons
+const addLesson = async (req, res) => {
+  try {
+    const { title, videoUrl, videoPublicId, duration } = req.body;
+    const { courseId, moduleId } = req.params;
+    
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    if (course.instructor.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to edit this course' });
+    }
+
+    const targetModule = course.modules.id(moduleId);
+    
+    if (!targetModule) {
+      return res.status(404).json({ message: 'Module not found' });
+    }
+
+    targetModule.lessons.push({ 
+      title, 
+      videoUrl, 
+      videoPublicId, 
+      duration: duration || 0 
+    });
+
+    await course.save();
+
+    res.status(200).json({ message: 'Lesson added successfully!', course });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// @desc    Create a new module in a course
+// @route   POST /api/courses/:courseId/modules
+const addModule = async (req, res) => {
+  try {
+    const { title } = req.body;
+    const { courseId } = req.params;
+
+    // 1. Find the course
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // 2. Security Check: Ensure the logged-in instructor owns this course
+    if (course.instructor.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to edit this course' });
+    }
+
+    // 3. Push the new module (the lessons array will be empty by default)
+    course.modules.push({ title });
+
+    // 4. Save to database
+    await course.save();
+
+    res.status(201).json({ message: 'Module created successfully', course });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
@@ -122,5 +193,7 @@ module.exports = {
   getCourseById,
   updateCourse,
   deleteCourse,
-  getInstructorCourses
+  getInstructorCourses,
+  addLesson,
+  addModule
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // For the direct Cloudinary upload
-import api from '../api/axios'; // Our secure bridge to our Node backend
+import axios from 'axios'; 
+import api from '../api/axios'; 
 
 const CreateCourse = () => {
   const [title, setTitle] = useState('');
@@ -22,39 +22,32 @@ const CreateCourse = () => {
     let thumbnailUrl = ''; 
 
     try {
-      // STEP 1 & 2: If they selected an image, handle Cloudinary first
       if (imageFile) {
-        // 1. Ask Node.js for the VIP Signature
         const signatureRes = await api.get('/cloudinary/signature');
         const { signature, timestamp } = signatureRes.data;
 
-        // 2. Pack up the file and the signature to send to Cloudinary
         const formData = new FormData();
         formData.append('file', imageFile);
         formData.append('signature', signature);
         formData.append('timestamp', timestamp);
         formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
 
-        // 3. Upload directly to Cloudinary (Notice we use standard 'axios' here, NOT our 'api' instance!)
         const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
         const uploadRes = await axios.post(
           `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
           formData
         );
 
-        // Cloudinary gives us back the secure URL where the image is hosted!
         thumbnailUrl = uploadRes.data.secure_url;
       }
 
-      // STEP 3: Now save the actual course to our Node.js database
       await api.post('/courses', {
         title,
         description,
         price,
-        thumbnailUrl // Attach the Cloudinary link we just got!
+        thumbnailUrl 
       });
 
-      // Boom. Done. Send them back to the dashboard.
       navigate('/instructor/dashboard');
 
     } catch (err) {
