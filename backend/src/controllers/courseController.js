@@ -25,7 +25,7 @@ const createCourse = async (req, res) => {
 // @route   GET /api/courses
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true })
+    const courses = await Course.find({})
       .select('-modules') 
       .populate('instructor', 'name'); 
 

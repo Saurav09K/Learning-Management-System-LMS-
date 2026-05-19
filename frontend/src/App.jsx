@@ -6,13 +6,19 @@ import ProtectedRoute from './components/ProtectedRoute';
 import CreateCourse from './pages/CreateCourse';
 import CurriculumBuilder from './pages/CurriculumBuilder';
 import CoursePlayer from './pages/CoursePlayer';
+import CourseCatalog from './pages/CourseCatalog';
+import CourseDetails from './pages/CourseDetails';
+import Navbar from './components/Navbar';
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 text-gray-900">        
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <Navbar />
+
         <Routes>
-          <Route path="/" element={<h1 className="text-3xl font-bold p-8">Public Course Catalog</h1>} />
+          <Route path="/" element={<CourseCatalog />} />
+          <Route path="/courses" element={<CourseCatalog />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -22,7 +28,7 @@ function App() {
           <Route path="/student/my-learning" element={<h1>Student Dashboard</h1>} />
           <Route path="/learn/:courseId" element={<ProtectedRoute allowedRoles={['student', 'instructor']}><CoursePlayer /></ProtectedRoute>} />
           <Route path="/student/course/:id" element={<ProtectedRoute allowedRoles={['student']}><CoursePlayer /></ProtectedRoute>} />
-
+          <Route path="/course/:id" element={<CourseDetails />} />
         </Routes>
       </div>
     </BrowserRouter>

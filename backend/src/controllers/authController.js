@@ -125,6 +125,7 @@ const login = async (req, res) => {
   }
 };
 
+
 const refreshAccessToken = async (req, res) => {
   try {
     const oldRefreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
@@ -140,19 +141,27 @@ const refreshAccessToken = async (req, res) => {
       return res.status(403).json({ message: "Invalid refresh token" });
     }
 
-    // Rotate the refresh token for the current device session only.
+    const user = await User.findById(tokenDoc.userId);
+    
+    if (!user) {
+      clearRefreshTokenCookie(res);
+      return res.status(403).json({ message: "User not found" });
+    }
+
     await revokeToken(oldRefreshToken);
 
     const newRefreshToken = await generateRefreshToken(
-      tokenDoc.userId._id,
+      user._id,
       getDeviceInfo(req)
     );
-    const accessToken = generateAccessToken(tokenDoc.userId);
-    const user = serializeUser(tokenDoc.userId);
-
+    const newAccessToken = generateAccessToken(user);
     setRefreshTokenCookie(res, newRefreshToken);
 
-    return res.status(200).json({ accessToken, user });
+    return res.status(200).json({ 
+      accessToken: newAccessToken,
+      user: serializeUser(user) 
+    });
+    
   } catch (err) {
     console.error("Refresh failed:", err);
     return res.status(500).json({ message: "Refresh failed" });

@@ -1,7 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
 import api from '../api/axios';
-import { setAxiosToken } from '../api/axios';
+import { refreshAccessToken, setAxiosToken } from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -10,23 +9,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const clearSession = () => {
+    setAccessToken(null);
+    setAxiosToken(null);
+    setUser(null);
+  };
+
+  useEffect(() => {
+    window.addEventListener('auth:session-expired', clearSession);
+
+    return () => {
+      window.removeEventListener('auth:session-expired', clearSession);
+    };
+  }, []);
+
   useEffect(() => {
     const refreshSession = async () => {
       try {
-        const response = await axios.post(
-          'http://localhost:5000/api/auth/refresh-token',
-          {},
-          { withCredentials: true }
-        );
+        const data = await refreshAccessToken();
         
-        setAccessToken(response.data.accessToken);
-        setAxiosToken(response.data.accessToken);
+        setAccessToken(data.accessToken);
+        setAxiosToken(data.accessToken);
 
-        setUser(response.data.user);
+        setUser(data.user);
         
-      } catch (error) {
-        setAccessToken(null);
-        setUser(null);
+      } catch {
+        clearSession();
       } finally {
         setLoading(false);
       }
@@ -61,10 +69,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout failed", error);
     } finally {
-      setAccessToken(null);
-      setAxiosToken(null);
-      setUser(null);
-      window.location.href = '/login'; // Redirect to login page
+      clearSession();
+      window.location.assign('/login');
     }
   };
 

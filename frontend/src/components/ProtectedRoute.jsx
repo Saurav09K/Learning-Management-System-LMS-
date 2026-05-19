@@ -19,9 +19,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     if (user.role === 'student') return <Navigate to="/student/my-learning" replace />;
     if (user.role === 'instructor') return <Navigate to="/instructor/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  // 4. If they pass all checks, let them see the page!
   return children;
 };
 
