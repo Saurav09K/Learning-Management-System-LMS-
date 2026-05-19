@@ -14,13 +14,15 @@ export const AuthProvider = ({ children }) => {
     const refreshSession = async () => {
       try {
         const response = await axios.post(
-          'http://localhost:5000/api/auth/refresh',
+          'http://localhost:5000/api/auth/refresh-token',
           {},
           { withCredentials: true }
         );
         
         setAccessToken(response.data.accessToken);
         setAxiosToken(response.data.accessToken);
+
+        setUser(response.data.user);
         
       } catch (error) {
         setAccessToken(null);

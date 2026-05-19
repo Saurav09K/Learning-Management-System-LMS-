@@ -147,11 +147,12 @@ const refreshAccessToken = async (req, res) => {
       tokenDoc.userId._id,
       getDeviceInfo(req)
     );
-    const newAccessToken = generateAccessToken(tokenDoc.userId);
+    const accessToken = generateAccessToken(tokenDoc.userId);
+    const user = serializeUser(tokenDoc.userId);
 
     setRefreshTokenCookie(res, newRefreshToken);
 
-    return res.status(200).json({ accessToken: newAccessToken });
+    return res.status(200).json({ accessToken, user });
   } catch (err) {
     console.error("Refresh failed:", err);
     return res.status(500).json({ message: "Refresh failed" });
