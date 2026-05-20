@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { useAuth } from '../context/AuthContext'; // 🔥 1. Import Auth!
+import { useAuth } from '../context/AuthContext'; 
 
 const CourseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth(); // 🔥 2. Grab the logged-in user
+  const { user } = useAuth(); 
   
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isEnrolling, setIsEnrolling] = useState(false); // 🔥 3. Loading state for the button
+  const [isEnrolling, setIsEnrolling] = useState(false); 
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -29,41 +29,61 @@ const CourseDetails = () => {
     fetchCourseDetails();
   }, [id]);
 
-  // 🔥 4. THE ENROLLMENT ENGINE
-  const handleEnroll = async () => {
-    // Check if they are logged in first
-    if (!user) {
-      navigate('/login');
-      return;
-    }
 
-    // (Optional) Stop instructors from buying courses accidentally
-    if (user.role === 'instructor') {
-      alert("Instructors cannot enroll in courses as students.");
-      return;
-    }
+const handleEnroll = async () => {
+  
+  const isLoaded = await loadRazorpayScript();
+  if (!isLoaded) {
+    alert("Razorpay SDK failed to load. Are you online?");
+    return;
+  }
+  try {
+    const response = await api.post('/payments/create-order', { courseId: course._id });
+    const order = response.data.order;
 
-    setIsEnrolling(true);
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
+      amount: order.amount,      
+      currency: order.currency,   
+      name: 'My LMS Platform',    
+      description: `Enroll in ${course.title}`, 
+      order_id: order.id,
+      
+      handler: function (response) {
+        console.log("PAYMENT SUCCESS!", response);
+        console.log("Payment ID:", response.razorpay_payment_id);
+        console.log("Signature:", response.razorpay_signature);
+        
+        // (Next step: we will send these to the backend to verify and enroll)
+      },
+      
+      prefill: {
+        name: user?.name || '',   
+        email: user?.email || '', 
+      },
+      theme: {
+        color: '#2563EB' 
+      },
+    };
+
+   
+    const rzp = new window.Razorpay(options);
     
-    try {
-      // Hit your perfect Enrollment API!
-      await api.post('/enrollments', { courseId: course._id });
-      
-      // Success! Teleport them to the dashboard
-      navigate('/student/my-learning');
-      
-    } catch (err) {
-      console.error("Enrollment error:", err);
-      // If your backend says they are already enrolled (status 400), just send them to the dashboard anyway!
-      if (err.response && err.response.status === 400) {
-        navigate('/student/my-learning');
-      } else {
-        alert(err.response?.data?.message || 'Failed to enroll. Please try again.');
-      }
-    } finally {
-      setIsEnrolling(false);
-    }
-  };
+    rzp.on('payment.failed', function (response){
+      console.error("Payment Failed!", response.error.description);
+      alert("Payment failed. Please try again.");
+    });
+
+    rzp.open();
+
+  } catch (error) {
+    console.error("Failed to start payment", error);
+    alert("Could not load payment gateway.");
+  }
+};
+  
+
+
 
   if (loading) {
     return (
@@ -127,7 +147,6 @@ const CourseDetails = () => {
                   {course.price > 0 ? `$${course.price}` : 'FREE'}
                 </div>
                 
-                {/* 🔥 5. Wire the button to handleEnroll */}
                 <button 
                   onClick={handleEnroll}
                   disabled={isEnrolling}
@@ -151,6 +170,17 @@ const CourseDetails = () => {
       </div>
     </div>
   );
+};
+
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 };
 
 export default CourseDetails;
