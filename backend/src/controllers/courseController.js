@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const Course = require("../models/course.model");
-
+const User = require("../models/user.model");
 
 // @desc    Create a new course
 // @route   POST /api/courses
@@ -195,5 +195,5 @@ module.exports = {
   deleteCourse,
   getInstructorCourses,
   addLesson,
-  addModule
+  addModule,
 };

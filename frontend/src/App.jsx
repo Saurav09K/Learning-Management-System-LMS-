@@ -9,6 +9,7 @@ import CoursePlayer from './pages/CoursePlayer';
 import CourseCatalog from './pages/CourseCatalog';
 import CourseDetails from './pages/CourseDetails';
 import Navbar from './components/Navbar';
+import MyLearning from './pages/MyLearning';
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
           <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorDashboard /></ProtectedRoute>} />
           <Route path="/instructor/create-course" element={<ProtectedRoute allowedRoles={['instructor']}><CreateCourse /></ProtectedRoute>} />
           <Route path="/instructor/course/:courseId/curriculum" element={<ProtectedRoute allowedRoles={['instructor']}><CurriculumBuilder /></ProtectedRoute>} />
-          <Route path="/student/my-learning" element={<h1>Student Dashboard</h1>} />
+          <Route path="/student/my-learning" element={<ProtectedRoute allowedRoles={['student']}><MyLearning /></ProtectedRoute>} />
           <Route path="/learn/:courseId" element={<ProtectedRoute allowedRoles={['student', 'instructor']}><CoursePlayer /></ProtectedRoute>} />
           <Route path="/student/course/:id" element={<ProtectedRoute allowedRoles={['student']}><CoursePlayer /></ProtectedRoute>} />
           <Route path="/course/:id" element={<CourseDetails />} />
