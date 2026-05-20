@@ -9,6 +9,7 @@ const CurriculumBuilder = () => {
   const [loading, setLoading] = useState(true);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const [moduleTitle, setModuleTitle] = useState('');
   const [lessonTitle, setLessonTitle] = useState('');
@@ -36,8 +37,14 @@ const CurriculumBuilder = () => {
 
   const handleCreateModule = async (e) => {
     e.preventDefault();
+    setError('');
+    setMessage('');
 
     if (!moduleTitle.trim()) {
+      const validationMessage = 'Please type a module title before adding it.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
       return; 
     }
 
@@ -45,33 +52,69 @@ const CurriculumBuilder = () => {
       //  POST /api/courses/:courseId/modules endpoint
       await api.post(`/courses/${courseId}/modules`, { title: moduleTitle });
       setModuleTitle('');
+      setMessage('Module created successfully.');
       fetchCourseDetails(); // Refresh list
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add module.');
+      const errorMessage = err.response?.data?.message || 'Failed to add module.';
+      console.error('Module creation failed:', err);
+      setError(errorMessage);
+      alert(errorMessage);
     }
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setVideoFile(file);
+    setError('');
+    setMessage(file ? `Selected video: ${file.name}` : '');
+    console.log('Selected video file:', file);
   };
 
   const handleAddLesson = async (e) => {
     e.preventDefault();
 
     setError('');
+    setMessage('');
+    console.log('Upload lesson submit clicked', {
+      selectedModuleId,
+      lessonTitle,
+      videoFile,
+    });
 
     if (!selectedModuleId) {
-      setError('Please select a Target Module from the dropdown.');
+      const validationMessage = 'Please create and select a Target Module before uploading a lesson.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
       return;
     }
     if (!lessonTitle.trim()) {
-      setError('Please type a Lesson Title.');
+      const validationMessage = 'Please type a Lesson Title.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
       return;
     }
     if (!videoFile) {
-      setError('Please select a Video File before uploading.');
+      const validationMessage = 'Please select a Video File before uploading.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
+      return;
+    }
+
+    if (!import.meta.env.VITE_CLOUDINARY_API_KEY || !import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) {
+      const validationMessage = 'Cloudinary config is missing. Check VITE_CLOUDINARY_API_KEY and VITE_CLOUDINARY_CLOUD_NAME.';
+      console.error(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
       return;
     }
 
     setUploadingVideo(true);
 
     try {
+      console.log('Requesting Cloudinary signature...');
       const signatureRes = await api.get('/cloudinary/signature');
       const { signature, timestamp } = signatureRes.data;
 
@@ -87,9 +130,11 @@ const CurriculumBuilder = () => {
         formData
       );
 
+      console.log('Cloudinary upload completed:', uploadRes.data);
       const videoUrl = uploadRes.data.secure_url;
       const videoPublicId = uploadRes.data.public_id;
       const duration = Math.round(uploadRes.data.duration); 
+      console.log('Saving lesson to backend...');
       await api.post(`/courses/${courseId}/modules/${selectedModuleId}/lessons`, {
         title: lessonTitle,
         videoUrl,
@@ -102,11 +147,14 @@ const CurriculumBuilder = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      setMessage('Lesson uploaded and saved successfully.');
       fetchCourseDetails();
 
     } catch (err) {
-      console.error(err);
-      setError('Video upload or saving failed. Make sure file size is within limits.');
+      const errorMessage = err.response?.data?.message || 'Video upload or saving failed. Make sure file size is within limits.';
+      console.error('Video upload/save failed:', err);
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setUploadingVideo(false);
     }
@@ -134,6 +182,7 @@ const CurriculumBuilder = () => {
         </div>
 
         {error && <div className="bg-red-100 text-red-700 p-4 rounded-md text-sm">{error}</div>}
+        {message && <div className="bg-green-100 text-green-700 p-4 rounded-md text-sm">{message}</div>}
 
         {/* Form 1: Add Module */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
@@ -142,7 +191,6 @@ const CurriculumBuilder = () => {
             <input
               type="text"
               placeholder="e.g. Module 1: Core Concepts"
-              required
               className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
               value={moduleTitle}
               onChange={(e) => setModuleTitle(e.target.value)}
@@ -164,6 +212,7 @@ const CurriculumBuilder = () => {
                 value={selectedModuleId}
                 onChange={(e) => setSelectedModuleId(e.target.value)}
               >
+                <option value="">Select a module</option>
                 {course?.modules?.map((mod) => (
                   <option key={mod._id} value={mod._id}>{mod.title}</option>
                 ))}
@@ -175,7 +224,6 @@ const CurriculumBuilder = () => {
               <input
                 type="text"
                 placeholder="e.g. Understanding Event Loop"
-                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                 value={lessonTitle}
                 onChange={(e) => setLessonTitle(e.target.value)}
@@ -188,15 +236,14 @@ const CurriculumBuilder = () => {
                 ref={fileInputRef}
                 type="file"
                 accept="video/*"
-                required
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                onChange={(e) => setVideoFile(e.target.files[0] || null)}
+                onChange={handleVideoFileChange}
               />
             </div>
 
             <button
               type="submit"
-              disabled={uploadingVideo || !selectedModuleId}
+              disabled={uploadingVideo}
               className={`w-full py-2 px-4 rounded-md text-white font-medium text-sm transition-colors ${
                 uploadingVideo ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
               }`}

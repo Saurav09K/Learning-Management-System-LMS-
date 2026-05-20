@@ -16,13 +16,56 @@ const CreateCourse = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    console.log('Create course submit clicked', {
+      title,
+      description,
+      price,
+      imageFile,
+    });
+
+    if (!title.trim()) {
+      const validationMessage = 'Please enter a course title.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
+      return;
+    }
+
+    if (!description.trim()) {
+      const validationMessage = 'Please enter a course description.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
+      return;
+    }
+
+    if (Number(price) < 0) {
+      const validationMessage = 'Course price cannot be negative.';
+      console.warn(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
+      return;
+    }
+
+    if (
+      imageFile &&
+      (!import.meta.env.VITE_CLOUDINARY_API_KEY || !import.meta.env.VITE_CLOUDINARY_CLOUD_NAME)
+    ) {
+      const validationMessage = 'Cloudinary config is missing. Check VITE_CLOUDINARY_API_KEY and VITE_CLOUDINARY_CLOUD_NAME.';
+      console.error(validationMessage);
+      setError(validationMessage);
+      alert(validationMessage);
+      return;
+    }
+
+    setLoading(true);
     
     let thumbnailUrl = ''; 
 
     try {
       if (imageFile) {
+        console.log('Requesting Cloudinary signature for thumbnail...');
         const signatureRes = await api.get('/cloudinary/signature');
         const { signature, timestamp } = signatureRes.data;
 
@@ -38,24 +81,35 @@ const CreateCourse = () => {
           formData
         );
 
+        console.log('Thumbnail upload completed:', uploadRes.data);
         thumbnailUrl = uploadRes.data.secure_url;
       }
 
+      console.log('Saving course to backend...');
       await api.post('/courses', {
         title,
         description,
-        price,
+        price: Number(price),
         thumbnailUrl 
       });
 
       navigate('/instructor/dashboard');
 
     } catch (err) {
-      console.error(err);
-      setError('Failed to create course. Please check your inputs and try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to create course. Please check your inputs and try again.';
+      console.error('Course creation failed:', err);
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    setError('');
+    console.log('Selected thumbnail file:', file);
   };
 
   return (
@@ -71,7 +125,6 @@ const CreateCourse = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
           <input
             type="text"
-            required
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -82,7 +135,6 @@ const CreateCourse = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
-            required
             rows="4"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             value={description}
@@ -97,7 +149,6 @@ const CreateCourse = () => {
             <input
               type="number"
               min="0"
-              required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
@@ -110,7 +161,7 @@ const CreateCourse = () => {
               type="file"
               accept="image/*"
               className="w-full px-4 py-2 border border-gray-300 rounded-md file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              onChange={(e) => setImageFile(e.target.files[0])}
+              onChange={handleImageFileChange}
             />
           </div>
         </div>
