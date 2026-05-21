@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const Course = require("../models/course.model");
 const User = require("../models/user.model");
+const redisClient = require('../config/redis')
 
 // @desc    Create a new course
 // @route   POST /api/courses
@@ -38,7 +39,20 @@ const getCourses = async (req, res) => {
 // @desc    Get a single course by ID (Full details with lessons)
 // @route   GET /api/courses/:id
 const getCourseById = async (req, res) => {
+
+  const cacheKey = `course:${req.params.id}`;
+
   try {
+   
+    const cachedCourse = await redisClient.get(cacheKey);
+
+    if (cachedCourse) {
+      return res.status(200).json({
+        success: true,
+        course: JSON.parse(cachedCourse)
+      });
+    }
+
     const course = await Course.findById(req.params.id)
       .populate('instructor', 'name email');
 
@@ -46,8 +60,15 @@ const getCourseById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
 
+    await redisClient.set(cacheKey, JSON.stringify(course), {
+            EX: 3600
+        });
+    
     res.status(200).json({ success: true, course });
+
+    
   } catch (error) {
+    console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
