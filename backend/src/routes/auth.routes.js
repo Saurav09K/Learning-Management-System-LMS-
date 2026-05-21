@@ -1,5 +1,6 @@
 const express = require("express");
-
+const authLimiter = require('../middleware/authLimiter');
+const refreshLimiter = require('../middleware/refreshLimiter');
 const {
   register,
   login,
@@ -9,9 +10,9 @@ const {
 
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/refresh-token", refreshAccessToken);
-router.post("/logout", logout);
+router.post("/register", authLimiter, register);
+router.post("/login", authLimiter, login);
+router.post("/refresh-token", refreshLimiter, refreshAccessToken);
+router.post("/logout",logout);
 
 module.exports = router;
