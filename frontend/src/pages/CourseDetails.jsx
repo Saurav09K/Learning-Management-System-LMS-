@@ -31,7 +31,7 @@ const CourseDetails = () => {
 
 
 const handleEnroll = async () => {
-  
+
   const isLoaded = await loadRazorpayScript();
   if (!isLoaded) {
     alert("Razorpay SDK failed to load. Are you online?");
@@ -49,12 +49,28 @@ const handleEnroll = async () => {
       description: `Enroll in ${course.title}`, 
       order_id: order.id,
       
-      handler: function (response) {
-        console.log("PAYMENT SUCCESS!", response);
-        console.log("Payment ID:", response.razorpay_payment_id);
-        console.log("Signature:", response.razorpay_signature);
-        
-        // (Next step: we will send these to the backend to verify and enroll)
+      handler: async function (response) {
+        try {
+
+          const verificationData = {
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+            courseId: course._id 
+          };
+
+          const verifyRes = await api.post('/payments/verify', verificationData);
+
+          if (verifyRes.data.success) {
+            navigate('/student/my-learning');
+          }
+          
+        } catch (error) {
+          console.error("Backend Verification Failed:", error);
+          alert(error.response?.data?.message || "Payment verification failed. Please contact support.");
+        } finally {
+          setIsEnrolling(false);
+        }
       },
       
       prefill: {
