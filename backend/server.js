@@ -1,11 +1,9 @@
 const app = require('./src/app.js')
 const connectDB = require('./src/config/db.js')
-const connectRedis = require('./src/config/redis.js')
-
+require('./src/config/redis.js')
 
 
 connectDB()
-connectRedis()
 const PORT = process.env.PORT || 5000;
 
 
