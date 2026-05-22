@@ -7,10 +7,13 @@ const CourseCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [page, setPage] = useState(1);
+  const limit = 2;
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await api.get('/courses');
+        const response = await api.get(`/courses?page=${page}&limit=${limit}`);
         const courseData = response.data.courses;
         setCourses(courseData);
         
@@ -23,7 +26,7 @@ const CourseCatalog = () => {
     };
 
     fetchCourses();
-  }, []);
+  }, [page]);
 
   if (loading) {
     return (
@@ -114,6 +117,36 @@ const CourseCatalog = () => {
             ))}
           </div>
         )}
+
+        <div className="flex justify-center items-center gap-4 mt-10">
+
+        {/* Previous */}
+        <button onClick={() => setPage(page - 1)}
+          disabled={page === 1}
+          className={`px-4 py-2 rounded text-white ${page === 1? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          Previous
+        </button>
+
+        <span className="font-semibold">
+          Page {page}
+        </span>
+
+        {/* Next */}
+        <button onClick={() => setPage(page + 1)} disabled={courses.length < limit}
+          className={`px-4 py-2 rounded text-white ${
+            courses.length < limit
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          Next
+        </button>
+
+      </div>
+
       </div>
     </div>
   );

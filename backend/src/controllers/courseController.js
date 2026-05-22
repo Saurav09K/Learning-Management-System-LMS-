@@ -26,12 +26,30 @@ const createCourse = async (req, res) => {
 // @route   GET /api/courses
 const getCourses = async (req, res) => {
   try {
+
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+
+    const skip = (page - 1) * limit;
+
+    const totalCourses = await Course.countDocuments({ published: true });
+
     const courses = await Course.find({})
       .select('-modules') 
-      .populate('instructor', 'name'); 
+      .populate('instructor', 'name')
+      .skip(skip)
+      .limit(limit); 
 
-    res.status(200).json({ success: true, count: courses.length, courses });
-  } catch (error) {
+    res.status(200).json({
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalCourses / limit),
+      totalCourses,
+      count: courses.length,
+      courses
+    });
+
+    } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
