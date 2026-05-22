@@ -16,6 +16,11 @@ const createCourse = async (req, res) => {
 
     const course = await Course.create(courseData);
 
+    const keys = await redisClient.keys('courses:page:*');
+    if (keys.length > 0) {
+      await redisClient.del(keys);
+    }
+
     res.status(201).json({ success: true, course });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
