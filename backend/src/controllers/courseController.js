@@ -32,22 +32,39 @@ const getCourses = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+
+    const cacheKey = `courses:page=${page}:limit=${limit}`;
+
+    const cachedCourse = await redisClient.get(cacheKey);
+
+    if(cachedCourse){
+            console.log("CACHE HIT");
+      return res.status(200).json(JSON.parse(cachedCourse));
+    }
+
+    console.log("CACHE MISS");
+
+
     const totalCourses = await Course.countDocuments({ published: true });
 
     const courses = await Course.find({})
       .select('-modules') 
       .populate('instructor', 'name')
       .skip(skip)
-      .limit(limit); 
+      .limit(limit);
+      
+      const responseData = {
+        success: true,
+        currentPage: page,
+        totalPages: Math.ceil(totalCourses / limit),
+        totalCourses,
+        count: courses.length,
+        courses
+      };
 
-    res.status(200).json({
-      success: true,
-      currentPage: page,
-      totalPages: Math.ceil(totalCourses / limit),
-      totalCourses,
-      count: courses.length,
-      courses
-    });
+      await redisClient.set(cacheKey,JSON.stringify(responseData));
+
+      res.status(200).json(responseData);
 
     } catch (error) {
     res.status(500).json({ success: false, message: error.message });
