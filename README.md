@@ -10,9 +10,6 @@ A full-stack Learning Management System built with the MERN stack. The app suppo
 - Vite
 - React Router
 - Axios
-- Tailwind CSS
-- shadcn/radix-ui components
-- Lucide React icons
 
 ### Backend
 
